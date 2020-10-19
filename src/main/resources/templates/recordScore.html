@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Record Score</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+          integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+</head>
+<body style="font-size:16px">
+<div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal"><a href="/">实验室管理系统</a></h5>
+
+    <div th:if="${user eq null}">
+        <a href="/sign_in" class="btn btn-outline-primary">登陆</a></div>
+    <div th:if="${user ne null}">
+        <span>Welcome, <a href="/profile" th:text="${user.name}"></a></span>
+        &nbsp;&nbsp;&nbsp;
+        <a href="/sign_out" class="btn btn-outline-danger">退出</a>
+    </div>
+</div>
+<div class="container" style="max-width: 960px">
+    <div class="row">
+        <div class="col-12 col-md">
+            <h3>个人信息</h3>
+            <p><img class="rounded" style="width:80px;height:80px" th:src="${user.imagUrl}" src="#"
+                    alt="this is an image"></p>
+            <p>邮箱: <span th:text="${user.email}"></span></p>
+            <p>姓名: <span th:text="${user.name}"></span></p>
+            <p>用户类型：<span th:text="${user.type}"></span></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <form method="post" action="/record_score">
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>实验课程</th>
+                    <th>成绩</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <label>
+                            <select name="name" class="form-control">
+                                <option selected>选择学生</option>
+                                <option th:each="student:${students}" th:value="${student.name}"
+                                        th:text="${student.name}">
+                                    arina
+                                </option>
+                            </select>
+                        </label>
+                    </td>
+                    <td>
+                        <label>
+                            <select name="course" class="form-control">
+                                <option selected>选择实验课程</option>
+                                <option th:each="course:${courses}" th:value="${course.name}"
+                                        th:text="${course.name}"></option>
+                            </select>
+                        </label>
+                    </td>
+                    <td>
+                        <label>
+                            <input type="text" name="score" class="form-control">
+                        </label>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-outline-primary" type="submit">提交</button>
+            <p class="text-info" th:text="${info}" th:if="${info}">info here</p>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>
