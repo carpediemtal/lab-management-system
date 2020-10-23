@@ -1,17 +1,23 @@
 package eternal.fire.controller;
 
 import eternal.fire.entity.Course;
+import eternal.fire.entity.Score;
 import eternal.fire.entity.User;
 import eternal.fire.service.CourseService;
 import eternal.fire.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
+import java.util.LinkedList;
 import java.util.List;
 
 @Controller
@@ -21,6 +27,7 @@ public class UserController {
     private final UserService userService;
     private final CourseService courseService;
 
+    @Autowired
     public UserController(UserService userService, CourseService courseService) {
         this.userService = userService;
         this.courseService = courseService;
@@ -28,7 +35,7 @@ public class UserController {
 
     public User getUserFromSession(HttpSession session) {
         String email = (String) session.getAttribute(KEY_USER_EMAIL);
-        System.out.println("从session中取出来的email是：" + email);
+        logger.info("Get user from session: {}", email);
         return userService.getUserByEmail(email);
     }
 
@@ -36,9 +43,7 @@ public class UserController {
     @GetMapping("/")
     public String index(Model model, HttpSession session) {
         User user = getUserFromSession(session);
-        if (user != null) {
-            model.addAttribute("user", user);
-        }
+        model.addAttribute("user", user);
         return "index";
     }
 
@@ -46,17 +51,14 @@ public class UserController {
     public String signIn(Model model, HttpSession session) {
         User user = getUserFromSession(session);
         model.addAttribute("user", user);
-        model.addAttribute("error", null);
         return user == null ? "signIn" : "redirect:/profile";
     }
 
     @PostMapping("/sign_in")
     public String doSignIn(@RequestParam("email") String email, @RequestParam("password") String password, HttpSession session, RedirectAttributes redirectAttributes) {
         logger.info("try to DoSignIn by email and password:{},{}", email, password);
-
         try {
             User user = userService.signIn(email, password);
-            System.out.println(user.getEmail());
             session.setAttribute(KEY_USER_EMAIL, user.getEmail());
         } catch (Exception e) {
             logger.info("登录失败");
@@ -81,8 +83,7 @@ public class UserController {
             return "redirect:/sign_in";
         }
         model.addAttribute("user", user);
-        String type = user.getType();
-        switch (type) {
+        switch (user.getType()) {
             case "学生" -> model.addAttribute("flag", 1);
             case "实验员" -> model.addAttribute("flag", 2);
             case "管理员" -> model.addAttribute("flag", 3);
@@ -97,12 +98,17 @@ public class UserController {
         User user = getUserFromSession(session);
         if (user == null) {
             return "redirect:/sign_in";
-        }
-        model.addAttribute("user", user);
-        if (!user.getType().equals("学生")) {
+        } else if (!user.getType().equals("学生")) {
             return "redirect:/profile";
         }
-        model.addAttribute("courses", userService.studentService.getMyCourse(user.getName()));
+        model.addAttribute("user", user);
+        List<Course> courses = userService.studentService.getMyCourse(user.getName());
+        List<Integer> scores = userService.studentService.getScoreByCourses(courses, userService.studentService.getIdByName(user.getName()));
+        List<Score> courseScores = new LinkedList<>();
+        for (int i = 0; i < courses.size(); i++) {
+            courseScores.add(new Score(courses.get(i).getName(), scores.get(i)));
+        }
+        model.addAttribute("courses", courseScores);
         return "scoreQuery";
     }
 
@@ -112,9 +118,11 @@ public class UserController {
         if (user == null) {
             return "redirect:/sign_in";
         }
+        if (!user.getType().equals("学生")) {
+            return "redirect:/profile";
+        }
         model.addAttribute("user", user);
-        List<Course> courses = userService.studentService.getMyCourse(user.getName());
-        model.addAttribute("courses", courses);
+        model.addAttribute("courses", userService.studentService.getMyCourse(user.getName()));
         return "courseQuery";
     }
 
@@ -125,17 +133,13 @@ public class UserController {
         User user = getUserFromSession(session);
         if (user == null) {
             return "redirect:/sign_in";
-        }
-        model.addAttribute("user", user);
-        var classes = userService.studentService.getClasses();
-        System.out.println(classes);
-        model.addAttribute("classes", userService.studentService.getClasses());
-        if (!user.getType().equals("实验员")) {
+        } else if (!user.getType().equals("实验员")) {
             return "redirect:/profile";
         }
+        model.addAttribute("user", user);
+        model.addAttribute("classes", userService.studentService.getClasses());
         model.addAttribute("students", userService.experimenterService.getMyStudent(user.getName()));
         model.addAttribute("courses", userService.experimenterService.getMyCourse(user.getName()));
-//        model.addAttribute("info", null);
         return "recordScore";
     }
 
@@ -153,17 +157,12 @@ public class UserController {
         User user = getUserFromSession(session);
         if (user == null) {
             logger.info("User is null");
-
             return "redirect:/sign_in";
-        }
-        model.addAttribute("user", user);
-        model.addAttribute("info", "");
-        if (!user.getType().equals("管理员")) {
+        } else if (!user.getType().equals("管理员")) {
             return "redirect:/profile";
         }
-
-        var courses = courseService.getAllCourse();
-        model.addAttribute("courses", courses);
+        model.addAttribute("user", user);
+        model.addAttribute("courses", courseService.getAllCourse());
         return "labManagement";
     }
 
@@ -175,7 +174,6 @@ public class UserController {
 
     @GetMapping("/delete/{id}")
     public String deleteCourse(@PathVariable("id") int id) {
-        System.out.println("主键：" + id);
         courseService.deleteCourse(id);
         return "redirect:/lab_management";
     }
@@ -187,9 +185,11 @@ public class UserController {
             logger.info("User is null");
             return "redirect:/sign_in";
         }
+        if (!user.getType().equals("管理员")) {
+            return "redirect:/profile";
+        }
         model.addAttribute("user", user);
         model.addAttribute("courses", courseService.getAllCourse());
-        var classes = userService.studentService.getClasses();
         model.addAttribute("classes", userService.studentService.getClasses());
         return "labArrangement";
     }

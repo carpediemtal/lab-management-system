@@ -1,6 +1,5 @@
 package eternal.fire.service;
 
-import eternal.fire.entity.Administrator;
 import eternal.fire.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

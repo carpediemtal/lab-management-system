@@ -1,7 +1,5 @@
 package eternal.fire.entity;
 
-import java.util.Objects;
-
 public class Student extends User {
     private String id;
     private String _class;

@@ -40,8 +40,8 @@ public class StudentService {
         }
     }
 
-    public int getIdByName(String name) {
-        return jdbcTemplate.queryForObject("select id from student where name = ?", new Object[]{name}, (resultSet, i) -> resultSet.getInt(1));
+    public String getIdByName(String name) {
+        return jdbcTemplate.queryForObject("select id from student where name = ?", new Object[]{name}, (resultSet, i) -> resultSet.getString(1));
     }
 
     public Student singIn(String email, String password) {
@@ -59,12 +59,21 @@ public class StudentService {
     }
 
     public List<Course> getMyCourse(String name) {
-        int studentId = getIdByName(name);
+        String studentId = getIdByName(name);
         List<Integer> coursesId = jdbcTemplate.query("SELECT course_id FROM student_score WHERE student_id = ?", new Object[]{studentId}, (resultSet, i) -> resultSet.getInt(1));
         List<Course> courses = new LinkedList<>();
         for (int id : coursesId) {
             courses.add(courseService.getCourseById(id));
         }
         return courses;
+    }
+
+    public List<Integer> getScoreByCourses(List<Course> courses, String studentId) {
+        List<Integer> scores = new LinkedList<>();
+        for (Course course : courses) {
+            Integer score = jdbcTemplate.queryForObject("SELECT score FROM student_score WHERE student_id = ? AND course_id = ?", new Object[]{studentId, course.getId()}, ((resultSet, i) -> resultSet.getInt(1)));
+            scores.add(score);
+        }
+        return scores;
     }
 }

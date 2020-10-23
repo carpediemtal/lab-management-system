@@ -68,7 +68,7 @@ public class ExperimenterService {
     }
 
     public void recordScore(String name, String course, int score) {
-        int studentId = studentService.getIdByName(name);
+        String studentId = studentService.getIdByName(name);
         int courseId = courseService.getIdByName(course);
         jdbcTemplate.update("insert into student_score (student_id, course_id, score) VALUES (?, ?, ?)", studentId, courseId, score);
     }
